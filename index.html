@@ -206,6 +206,8 @@ a{color:inherit}
       <div class="fr"><label>세금 (%)</label><input type="number" id="mTax" value="0" step="1" oninput="calcMargin()"></div>
       <div class="fr"><label>입출고+배송비 (원)</label><input type="number" id="mDeliv" value="3000" oninput="calcMargin()"></div>
       <div class="fr"><label>잡비/반품비 (원)</label><input type="number" id="mReturn" value="300" oninput="calcMargin()"></div>
+      <div class="sep"></div>
+      <div class="fr"><label>상품명 (선택)</label><input type="text" id="mName" placeholder="예) 스텐 텀블러 500ml"></div>
     </div>
     <div class="card">
       <div class="ct" style="margin-bottom:16px">계산 결과</div>
@@ -233,6 +235,7 @@ a{color:inherit}
           <span id="mBep" style="font-weight:800;color:#1e293b">-</span>
         </div>
       </div>
+      <button class="btn bs" style="width:100%;margin-top:14px;justify-content:center;font-size:14px" id="mSaveBtn" onclick="saveMarginToDB()">💾 소싱 DB에 저장</button>
     </div>
   </div>
 
@@ -516,6 +519,40 @@ function calcMargin() {
   } else { setText('mBep','-'); }
 }
 
+// ── 마진계산기 → 소싱 DB 저장
+function saveMarginToDB() {
+  const price = parseFloat(document.getElementById('mPrice').value)||0;
+  if (!price) { alert('판매가를 먼저 입력하세요.'); return; }
+  const yuan  = parseFloat(document.getElementById('mYuan').value)||0;
+  const cost  = getCostKRW();
+  const commR = parseFloat(document.getElementById('mComm').value)||11;
+  const mktR  = parseFloat(document.getElementById('mMkt').value)||20;
+  const taxR  = parseFloat(document.getElementById('mTax').value)||0;
+  const deliv = parseFloat(document.getElementById('mDeliv').value)||3000;
+  const ret   = parseFloat(document.getElementById('mReturn').value)||300;
+  const name  = document.getElementById('mName').value.trim() || '직접입력 상품';
+  const comm  = price*commR/100, mkt = price*mktR/100, tax = price*taxR/100;
+  const nm    = price - cost - comm - mkt - tax - deliv - ret;
+  const mp    = price>0 ? nm/price*100 : 0;
+  let sc = 0;
+  if (price>=15000) sc+=30; else if (price>=10000) sc+=20; else if (price>=7000) sc+=10;
+  S.db.push({
+    id: Date.now()+Math.random(),
+    name, keyword: '', price, yuan, qty: 1, costKRW: cost,
+    netMargin: Math.round(nm), marginPct: parseFloat(mp.toFixed(1)),
+    monthlySales: 0, monthlyProfit: 0,
+    reviewCount: 0, conversionRate: 0, monthlyRevenue: 0,
+    score: null, coupangUrl: '', sourcingUrl: '',
+    deliveryType: '', status:'검토중', memo:'',
+    date: new Date().toLocaleDateString('ko-KR'),
+    source: 'manual',
+  });
+  save();
+  const btn = document.getElementById('mSaveBtn');
+  btn.textContent = '✓ 저장 완료!'; btn.style.background = '#059669';
+  setTimeout(()=>{ btn.textContent='💾 소싱 DB에 저장'; btn.style.background=''; }, 2000);
+}
+
 // ── Excel 파싱
 function handleDrop(e) { e.preventDefault(); document.getElementById('upZone').classList.remove('drag'); const f=e.dataTransfer.files[0]; if(f) parseXlsx(f); }
 function handleXlsx(e) { if(e.target.files[0]) parseXlsx(e.target.files[0]); }
@@ -763,8 +800,8 @@ function renderDb() {
     <tbody>
     ${list.map(item => {
       const mc = item.marginPct>=10?'mpos':'mneg';
-      const sc = item.score>=70?'sch':item.score>=40?'scm':'scl';
-      const nm = item.name ? item.name.slice(0,28)+(item.name.length>28?'…':'') : '-';
+      const hasScore = item.score != null && item.score !== '';
+      const scClass = hasScore ? (item.score>=70?'sch':item.score>=40?'scm':'scl') : 'bgy';
       return `<tr>
         <td>
           <select class="badge ${colors[item.status]||'bgy'}"
@@ -775,18 +812,30 @@ function renderDb() {
             <option value="포기"     ${item.status==='포기'?'selected':''}>❌ 포기</option>
           </select>
         </td>
-        <td style="font-size:12px">
-          ${item.coupangUrl?`<a href="${esc(item.coupangUrl)}" target="_blank" style="color:#1e293b;text-decoration:none">${esc(nm)}</a>`:esc(nm)}
+        <td>
+          <input type="text" value="${esc(item.name||'')}" placeholder="상품명"
+            style="width:160px;padding:4px 7px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;background:#f8fafc"
+            onchange="updateDbField('${item.id}','name',this.value)">
+          ${item.coupangUrl?`<a href="${esc(item.coupangUrl)}" target="_blank" style="display:block;font-size:10px;color:#3b82f6;margin-top:3px;text-decoration:none">쿠팡 링크 ↗</a>`:''}
         </td>
         <td style="font-weight:800">${fmt(item.price)}원</td>
         <td style="font-size:12px">${item.yuan?`¥${item.yuan}<br><span style="color:#94a3b8">${fmt(item.costKRW)}원</span>`:'-'}</td>
         <td style="font-size:12px;color:#64748b">${item.price>0&&item.costKRW>0?(item.costKRW/item.price*100).toFixed(1)+'%':'-'}</td>
         <td><span class="${mc}">${item.marginPct?.toFixed(1)}%</span></td>
         <td><span class="${mc}" style="font-size:12px">${item.netMargin!=null?fmt(item.netMargin)+'원':'-'}</span></td>
-        <td>${item.monthlySales>0?fmtK(item.monthlySales)+'개':'-'}</td>
-        <td style="font-weight:800;color:#059669">${item.monthlyProfit>0?fmtM(item.monthlyProfit):'-'}</td>
-        <td><div class="sc ${sc}" style="width:32px;height:32px;font-size:12px">${item.score||'-'}</div></td>
-        <td>${item.sourcingUrl?`<a href="${esc(item.sourcingUrl)}" target="_blank" class="btn bg bsm">소싱</a>`:'-'}</td>
+        <td>
+          <input type="number" value="${item.monthlySales||''}" placeholder="-"
+            style="width:70px;padding:4px 6px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;text-align:right;font-family:inherit;background:#f8fafc"
+            onchange="updateMonthlySales('${item.id}',this.value)">
+        </td>
+        <td style="font-weight:800;color:#059669" id="mp_${item.id}">${item.monthlyProfit>0?fmtM(item.monthlyProfit):'-'}</td>
+        <td><div class="sc ${scClass}" style="width:32px;height:32px;font-size:12px">${hasScore?item.score:'-'}</div></td>
+        <td>
+          <input type="text" value="${esc(item.sourcingUrl||'')}" placeholder="소싱 URL"
+            style="width:110px;padding:4px 6px;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;font-family:inherit;background:#f8fafc"
+            onchange="updateDbField('${item.id}','sourcingUrl',this.value)">
+          ${item.sourcingUrl?`<a href="${esc(item.sourcingUrl)}" target="_blank" style="display:block;font-size:10px;color:#3b82f6;margin-top:3px;text-decoration:none">링크 열기 ↗</a>`:''}
+        </td>
         <td><textarea placeholder="메모..." rows="2"
           style="width:150px;padding:4px 6px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;resize:vertical;min-height:40px;font-family:inherit;line-height:1.4"
           onchange="updateDbField('${item.id}','memo',this.value)">${esc(item.memo||'')}</textarea></td>
@@ -799,6 +848,16 @@ function renderDb() {
 function updateDbField(id, field, val) {
   const item = S.db.find(d=>String(d.id)===String(id));
   if (item) { item[field]=val; save(); }
+}
+function updateMonthlySales(id, val) {
+  const item = S.db.find(d=>String(d.id)===String(id));
+  if (!item) return;
+  const sales = parseInt(val)||0;
+  item.monthlySales = sales;
+  item.monthlyProfit = sales>0 && item.netMargin ? Math.round(item.netMargin * sales) : 0;
+  save();
+  const el = document.getElementById('mp_'+id);
+  if (el) el.innerHTML = item.monthlyProfit>0 ? fmtM(item.monthlyProfit) : '-';
 }
 function deleteItem(id) {
   if (!confirm('삭제할까요?')) return;
