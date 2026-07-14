@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>깜오 그로스마진계산기</title>
+<style>
+  :root{
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --border:#e6e8ef;
+    --text:#1a1d29;
+    --sub:#6b7280;
+    --accent1:#5b6ff2;
+    --accent2:#22c1c3;
+    --input-bg:#fbfbfd;
+    --result-bg:#f4f5fb;
+    --danger:#e0475a;
+    --good:#2f8f5b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:40px 16px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{width:100%;max-width:480px;}
+  h1{
+    text-align:center;
+    font-size:28px;
+    font-weight:800;
+    margin:0 0 24px;
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    letter-spacing:-0.5px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:28px 24px;
+    box-shadow:0 2px 12px rgba(20,20,40,0.04);
+  }
+  .reset{
+    text-align:right;
+    font-size:12px;
+    color:var(--sub);
+    text-decoration:underline;
+    cursor:pointer;
+    margin-bottom:12px;
+  }
+  .field{margin-bottom:16px;}
+  .radio-group{
+    display:flex;
+    gap:16px;
+    margin-bottom:8px;
+  }
+  .radio-opt{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    cursor:pointer;
+  }
+  .radio-opt input{width:auto;accent-color:var(--accent1);}
+  .cost-input-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .cost-input-row input[type=number]#importCostRaw{
+    flex:1;
+    min-width:0;
+  }
+  .cost-x{
+    font-size:12px;
+    color:var(--sub);
+    white-space:nowrap;
+    display:flex;
+    align-items:center;
+    gap:4px;
+  }
+  .cost-result{
+    font-size:15px;
+    font-weight:800;
+    color:var(--text);
+    white-space:nowrap;
+  }
+  .field label{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    margin-bottom:6px;
+  }
+  .field .hint{font-size:11px;color:var(--sub);font-weight:400;}
+  input[type=number], input[type=text]{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--input-bg);
+    font-size:15px;
+    font-weight:600;
+    color:var(--text);
+    outline:none;
+    transition:border-color .15s;
+  }
+  input:focus{border-color:var(--accent1);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .size-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:8px;
+    padding:6px 12px;
+    border-radius:999px;
+    background:#eef0fb;
+    color:var(--accent1);
+    font-size:12px;
+    font-weight:700;
+  }
+  .size-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .size-card{
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    padding:10px 6px;
+    cursor:pointer;
+    background:var(--input-bg);
+    transition:all .12s;
+    text-align:center;
+  }
+  .size-card:hover{border-color:#c7cbf5;}
+  .size-card.active{
+    border-color:var(--accent1);
+    background:#eef0fb;
+  }
+  .size-card .sc-name{
+    font-size:13px;
+    font-weight:800;
+    color:var(--text);
+  }
+  .size-card.active .sc-name{color:var(--accent1);}
+  .size-card .sc-example{
+    font-size:10px;
+    color:var(--sub);
+    margin-top:4px;
+    line-height:1.4;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .size-card .sc-range{
+    font-size:10px;
+    color:#9aa0b0;
+    margin-top:4px;
+  }
+  .auto-tag{
+    font-size:10px;
+    background:var(--accent2);
+    color:#fff;
+    padding:2px 6px;
+    border-radius:6px;
+    font-weight:700;
+  }
+  .fee-note{font-size:11px;color:var(--sub);margin-top:4px;}
+  hr.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+  .results{
+    background:var(--result-bg);
+    border-radius:14px;
+    padding:18px 18px 8px;
+  }
+  .r-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:8px 0;
+    border-bottom:1px solid rgba(0,0,0,0.05);
+  }
+  .r-row:last-child{border-bottom:none;}
+  .r-label{font-size:13px;color:var(--sub);font-weight:600;}
+  .r-value{font-size:15px;font-weight:700;}
+  .r-value.big{font-size:22px;color:var(--accent1);}
+  .r-value.roas{color:var(--danger);}
+  .r-value.margin{color:var(--good);}
+  .r-value.emphasis{
+    font-size:24px;
+    font-weight:800;
+    color:var(--danger);
+  }
+  .footnote{
+    font-size:10px;
+    color:var(--sub);
+    text-align:center;
+    margin-top:14px;
+    line-height:1.5;
+  }
+  .toggle-link{
+    text-align:center;
+    margin-top:10px;
+    font-size:12px;
+    color:var(--accent1);
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .footer-cta{background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:14px;padding:22px 20px;margin-top:16px;color:#fff;}
+  .footer-cta h3{font-size:14px;font-weight:900;margin:0 0 6px;}
+  .footer-cta p{font-size:11px;color:#94a3b8;margin:0 0 14px;line-height:1.6;}
+  .footer-links{display:flex;flex-wrap:wrap;gap:8px;}
+  .mkt-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:800;text-decoration:none;transition:all .2s;border:none;cursor:pointer;white-space:nowrap;}
+  .mkt-yt{background:#ff0000;color:#fff;}.mkt-yt:hover{background:#cc0000;}
+  .mkt-class{background:#f59e0b;color:#fff;}.mkt-class:hover{background:#d97706;}
+  .mkt-kakao{background:#fee500;color:#1a1a1a;}.mkt-kakao:hover{background:#ffd700;}
+  #formula{
+    display:none;
+    background:#fff;
+    border:1px dashed var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:11px;
+    color:var(--sub);
+    line-height:1.7;
+    margin-top:10px;
+    white-space:pre-wrap;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>깜오 그로스마진계산기</h1>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <span id="saveIndicator" style="font-size:11px;color:var(--good);opacity:0;transition:opacity .3s;">✓ 저장됨</span>
+      <span class="reset" style="margin-bottom:0;" onclick="resetAll()">초기화</span>
+    </div>
+
+    <div class="field">
+      <label>판매가</label>
+      <input type="number" id="salePrice" value="8900" oninput="calc()">
+    </div>
+
+    <div class="field">
+      <label>상품 사이즈 <span class="hint">비슷한 걸 골라주세요</span></label>
+      <div class="size-grid" id="sizeGrid"></div>
+    </div>
+
+    <div class="field">
+      <label>수수료(%) <span class="hint">기본 11% 고정, 필요시 수정</span></label>
+      <input type="number" id="feeRate" value="11" step="0.1" oninput="calc()">
+    </div>
+
+    <div class="field">
+      <label>입출고/배송비용 <span class="auto-tag">AUTO</span></label>
+      <input type="number" id="shipCost" value="0" oninput="manualShip=true;calc()">
+      <div class="fee-note">판매가+사이즈 기준 프로모션 할인가 자동 반영 (수정 가능)</div>
+      <div class="fee-note" style="margin-top:4px;">📦 위탁판매 하시는 분은 로켓그로스 배송비 대신 <b>입고비 약 3,000원</b>으로 대략 잡고 계산하시면 됩니다.</div>
+    </div>
+
+    <div class="field">
+      <label>원가 입력 방식</label>
+      <div class="radio-group">
+        <label class="radio-opt"><input type="radio" name="costMode" value="cny" checked onchange="onCostModeChange()"> 위안(¥) 입력</label>
+        <label class="radio-opt"><input type="radio" name="costMode" value="krw" onchange="onCostModeChange()"> 원화(₩) 직접입력</label>
+      </div>
+      <div class="cost-input-row">
+        <input type="number" id="importCostRaw" value="9" step="0.01" oninput="calc()">
+        <span class="cost-x" id="costRateWrap">× <input type="number" id="exRate" value="300" style="width:56px;padding:6px;border:1px solid var(--border);border-radius:8px;font-size:13px;text-align:center;" oninput="calc()">원 =</span>
+        <span class="cost-result" id="importCostResult">0원</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>구성 수량</label>
+      <input type="number" id="qty" value="2" oninput="calc()">
+    </div>
+
+    <div class="field">
+      <label>예상 월판매량 <span class="hint">총 판매량 기준 (광고+자연 합산)</span></label>
+      <input type="number" id="monthQty" value="100" oninput="calc()">
+    </div>
+
+    <div class="field">
+      <label>광고비율(%) <span class="hint">기본 20%, 필요시 수정</span></label>
+      <input type="number" id="adRate" value="20" step="0.5" oninput="calc()">
+    </div>
+
+    <hr class="divider">
+
+    <div class="results">
+      <div class="r-row"><span class="r-label">개당 수익</span><span class="r-value emphasis" id="outUnitProfit">-</span></div>
+      <div class="r-row"><span class="r-label">최종 마진율</span><span class="r-value margin" id="outMarginRate">-</span></div>
+      <div class="r-row"><span class="r-label">원가율</span><span class="r-value" id="outCostRate">-</span></div>
+      <div class="r-row"><span class="r-label">총 예상 판매량</span><span class="r-value" id="outTotalQty">-</span></div>
+      <div class="r-row"><span class="r-label">총 예상 월매출</span><span class="r-value" id="outMonthRev">-</span></div>
+      <div class="r-row"><span class="r-label">총 예상 월마진</span><span class="r-value big" id="outMonthMargin">-</span></div>
+    </div>
+
+    <div class="footer-cta">
+      <h3>🎓 쿠팡 로켓그로스 제대로 배우고 싶다면?</h3>
+      <p>15년차 이커머스 억대셀러 깜오가 직접 알려드리는 소싱 노하우 · 로켓그로스 실전 강의</p>
+      <div class="footer-links">
+        <a href="https://www.youtube.com/@ggamo5" target="_blank" class="mkt-btn mkt-yt">▶ 유튜브 구독</a>
+        <a href="https://cafe.naver.com/seller0/69" target="_blank" class="mkt-btn mkt-class">📚 강의 보기</a>
+        <a href="https://open.kakao.com/o/g7XrQcrg" target="_blank" class="mkt-btn mkt-kakao">💬 초보 셀러 1번 톡방 (참여코드: 0621)</a>
+      </div>
+    </div>
+
+    <div class="toggle-link" onclick="toggleFormula()">계산식 보기</div>
+    <div id="formula"></div>
+
+    <div class="footnote">
+      입출고/배송비는 쿠팡 로켓그로스 사이즈 유형표(6단계) + 판매가 구간별 프로모션 할인가(2027.01.31까지) 기준 자동 산출입니다.<br>
+      실제 요금은 카테고리·최신 정책에 따라 달라질 수 있으니 쿠팡윙에서 최종 확인하세요.
+    </div>
+  </div>
+</div>
+
+<script>
+let manualShip = false;
+
+// 로켓그로스 사이즈 유형표 (세변의 합 cm / 무게 kg) + 직관적 예시
+const sizeTable = [
+  {name:'극소형', maxSum:80,  maxWt:2,  example:'손수건, 안경, 헤어밴드', range:'세변합 ~80cm · ~2kg'},
+  {name:'소형',   maxSum:100, maxWt:5,  example:'수건세트, 슬리퍼, 가방', range:'세변합 ~100cm · ~5kg'},
+  {name:'중형',   maxSum:120, maxWt:10, example:'담요, 베개, 정리함', range:'세변합 ~120cm · ~10kg'},
+];
+let selectedSizeIdx = 1;
+
+function renderSizeGrid(){
+  const grid = document.getElementById('sizeGrid');
+  grid.innerHTML = sizeTable.map((s,i)=>`
+    <div class="size-card ${i===selectedSizeIdx?'active':''}" onclick="selectSize(${i})">
+      <div class="sc-name">${i===selectedSizeIdx?'✓ ':''}${s.name}</div>
+      <div class="sc-example">${s.example}</div>
+      <div class="sc-range">${s.range}</div>
+    </div>
+  `).join('');
+}
+function selectSize(i){
+  selectedSizeIdx = i;
+  manualShip = false;
+  renderSizeGrid();
+  calc();
+}
+
+// 입출고/배송비 프로모션 할인가표 (판매가 구간 x 사이즈유형)
+// 열 순서: 극소형, 소형, 중형, 대형1, 대형2, 특대형
+const feeTable = [
+  {max:5000,      fees:[2050,3250,4050,4350,6325,7825]},
+  {max:10000,     fees:[2150,3275,4050,4500,6600,8100]},
+  {max:15000,     fees:[2800,3275,4050,4500,6600,8100]},
+  {max:20000,     fees:[2925,3325,4050,4500,6600,8100]},
+  {max:30000,     fees:[3075,3325,4050,4500,6600,8100]},
+  {max:40000,     fees:[3600,3625,4425,5300,6600,8100]},
+  {max:50000,     fees:[3850,4150,4825,5600,6600,8100]},
+  {max:60000,     fees:[3850,4150,4825,5975,6975,8475]},
+  {max:80000,     fees:[3850,4150,4825,5975,7050,8550]},
+  {max:100000,    fees:[3850,4150,4825,6200,7050,8550]},
+  {max:Infinity,  fees:[3850,4150,4825,6200,7050,8550]},
+];
+
+function getShipFee(salePrice, sizeIdx){
+  const tier = feeTable.find(t=>salePrice < t.max) || feeTable[feeTable.length-1];
+  return tier.fees[sizeIdx];
+}
+
+function won(n){
+  return Math.round(n).toLocaleString('ko-KR')+'원';
+}
+function pct(n){
+  return (n*100).toFixed(1)+'%';
+}
+
+function onCostModeChange(){
+  const mode = document.querySelector('input[name="costMode"]:checked').value;
+  const wrap = document.getElementById('costRateWrap');
+  wrap.style.display = mode==='cny' ? 'flex' : 'none';
+  calc();
+}
+
+function calc(){
+  const salePrice = parseFloat(document.getElementById('salePrice').value)||0;
+  const feeRate = (parseFloat(document.getElementById('feeRate').value)||0)/100;
+  const costMode = document.querySelector('input[name="costMode"]:checked').value;
+  const importCostRaw = parseFloat(document.getElementById('importCostRaw').value)||0;
+  const exRate = parseFloat(document.getElementById('exRate').value)||0;
+  const importCost = costMode==='cny' ? importCostRaw*exRate : importCostRaw;
+  document.getElementById('importCostResult').textContent = won(importCost);
+  const qty = parseFloat(document.getElementById('qty').value)||0;
+  const totalQty = parseFloat(document.getElementById('monthQty').value)||0;
+  const adRate = (parseFloat(document.getElementById('adRate').value)||0)/100;
+
+  const sizeIdx = selectedSizeIdx;
+
+  if(!manualShip){
+    const autoFee = getShipFee(salePrice, sizeIdx);
+    document.getElementById('shipCost').value = autoFee;
+  }
+  const shipCost = parseFloat(document.getElementById('shipCost').value)||0;
+
+  const unitImportCost = importCost*qty;
+  const feeAmt = salePrice*feeRate;
+  const misc = salePrice*0.03;
+  const costPerUnitExclAd = unitImportCost + feeAmt + shipCost + misc;
+
+  const adCostTotal = totalQty*salePrice*adRate;
+
+  const totalRevenue = totalQty*salePrice;
+  const totalGoodsCost = totalQty*costPerUnitExclAd;
+  const totalMargin = totalRevenue - totalGoodsCost - adCostTotal;
+
+  const marginRate = totalRevenue>0 ? totalMargin/totalRevenue : 0;
+  const costRate = totalRevenue>0 ? (totalQty*unitImportCost)/totalRevenue : 0;
+  const unitProfitAvg = totalQty>0 ? totalMargin/totalQty : 0;
+
+  document.getElementById('outTotalQty').textContent = `${Math.round(totalQty).toLocaleString('ko-KR')}개`;
+  document.getElementById('outMonthRev').textContent = won(totalRevenue);
+  document.getElementById('outCostRate').textContent = pct(costRate);
+  document.getElementById('outMarginRate').textContent = pct(marginRate);
+  document.getElementById('outUnitProfit').textContent = won(unitProfitAvg);
+  document.getElementById('outMonthMargin').textContent = won(totalMargin);
+
+  document.getElementById('formula').textContent =
+`[개당 원가성 비용 (광고·리뷰비 제외)]
+원가 = 수입원가 × 구성수량 = ${won(importCost)} × ${qty} = ${won(unitImportCost)}
+수수료 = 판매가 × 수수료율 = ${won(salePrice)} × ${(feeRate*100).toFixed(1)}% = ${won(feeAmt)}
+잡비 = 판매가 × 3% = ${won(misc)}
+개당 원가성 비용 합계 = ${won(costPerUnitExclAd)}
+
+[광고비]
+광고비 총액 = 예상월판매량 × 판매가 × 광고비율 = ${totalQty} × ${won(salePrice)} × ${(adRate*100).toFixed(1)}% = ${won(adCostTotal)}
+
+[총 예상 월마진]
+총 매출 = 예상월판매량 × 판매가 = ${won(totalRevenue)}
+총 원가성 비용 = 예상월판매량 × 개당원가성비용 = ${won(totalGoodsCost)}
+총 예상 월마진 = 총매출 - 총원가성비용 - 광고비총액
+        = ${won(totalRevenue)} - ${won(totalGoodsCost)} - ${won(adCostTotal)}
+        = ${won(totalMargin)}
+개당 수익 = 총예상월마진 ÷ 총판매량 = ${won(unitProfitAvg)}
+최종 마진율 = 총마진 ÷ 총매출 = ${pct(marginRate)}`;
+
+  saveState();
+}
+
+function toggleFormula(){
+  const el = document.getElementById('formula');
+  el.style.display = el.style.display==='block' ? 'none' : 'block';
+}
+
+function resetAll(){
+  document.getElementById('salePrice').value=8900;
+  document.getElementById('feeRate').value=11;
+  document.getElementById('importCostRaw').value=9;
+  document.getElementById('exRate').value=300;
+  document.querySelector('input[name="costMode"][value="cny"]').checked = true;
+  document.getElementById('costRateWrap').style.display='flex';
+  document.getElementById('qty').value=2;
+  document.getElementById('monthQty').value=100;
+  document.getElementById('adRate').value=20;
+  selectedSizeIdx=1;
+  manualShip=false;
+  renderSizeGrid();
+  calc();
+  saveState();
+}
+
+const STORAGE_KEY = 'kkamo_gross_margin_calc_state';
+let saveTimer = null;
+
+function collectState(){
+  return {
+    salePrice: document.getElementById('salePrice').value,
+    feeRate: document.getElementById('feeRate').value,
+    shipCost: document.getElementById('shipCost').value,
+    manualShip: manualShip,
+    costMode: document.querySelector('input[name="costMode"]:checked').value,
+    importCostRaw: document.getElementById('importCostRaw').value,
+    exRate: document.getElementById('exRate').value,
+    qty: document.getElementById('qty').value,
+    monthQty: document.getElementById('monthQty').value,
+    adRate: document.getElementById('adRate').value,
+    selectedSizeIdx: selectedSizeIdx
+  };
+}
+
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    try{
+      if(window.storage){
+        await window.storage.set(STORAGE_KEY, JSON.stringify(collectState()), false);
+        showSaveIndicator();
+      }
+    }catch(e){
+      console.error('저장 실패:', e);
+    }
+  }, 300);
+}
+
+function showSaveIndicator(){
+  const el = document.getElementById('saveIndicator');
+  if(!el) return;
+  el.style.opacity = '1';
+  clearTimeout(showSaveIndicator._t);
+  showSaveIndicator._t = setTimeout(()=>{ el.style.opacity='0'; }, 1200);
+}
+
+async function loadState(){
+  try{
+    if(!window.storage) return false;
+    const result = await window.storage.get(STORAGE_KEY, false);
+    if(!result || !result.value) return false;
+    const s = JSON.parse(result.value);
+    if(s.salePrice!==undefined) document.getElementById('salePrice').value = s.salePrice;
+    if(s.feeRate!==undefined) document.getElementById('feeRate').value = s.feeRate;
+    if(s.shipCost!==undefined) document.getElementById('shipCost').value = s.shipCost;
+    manualShip = !!s.manualShip;
+    if(s.costMode){
+      document.querySelector(`input[name="costMode"][value="${s.costMode}"]`).checked = true;
+      document.getElementById('costRateWrap').style.display = s.costMode==='cny' ? 'flex' : 'none';
+    }
+    if(s.importCostRaw!==undefined) document.getElementById('importCostRaw').value = s.importCostRaw;
+    if(s.exRate!==undefined) document.getElementById('exRate').value = s.exRate;
+    if(s.qty!==undefined) document.getElementById('qty').value = s.qty;
+    if(s.monthQty!==undefined) document.getElementById('monthQty').value = s.monthQty;
+    if(s.adRate!==undefined) document.getElementById('adRate').value = s.adRate;
+    if(s.selectedSizeIdx!==undefined) selectedSizeIdx = s.selectedSizeIdx;
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+async function init(){
+  renderSizeGrid();
+  const loaded = await loadState();
+  calc();
+  if(!loaded) saveState();
+}
+
+init();
+</script>
+</body>
+</html>
