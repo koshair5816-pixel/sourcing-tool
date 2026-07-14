@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -28,6 +29,71 @@
     justify-content:center;
   }
   .wrap{width:100%;max-width:480px;}
+  .tabnav{
+    display:flex;
+    gap:4px;
+    justify-content:center;
+    margin:0 auto 20px;
+    padding:5px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:999px;
+    box-shadow:0 1px 2px rgba(20,20,40,.04);
+    max-width:fit-content;
+  }
+  .tabbtn{
+    padding:9px 20px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:800;
+    color:var(--sub);
+    background:transparent;
+    border:none;
+    cursor:pointer;
+    transition:all .2s;
+  }
+  .tabbtn.on{background:var(--accent1);color:#fff;}
+  .tabpage{display:none;}
+  .tabpage.on{display:block;}
+  .src-item{
+    background:var(--input-bg);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:10px;
+  }
+  .src-item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+  .src-item-name{font-size:14px;font-weight:800;color:var(--text);}
+  .src-item-date{font-size:10px;color:var(--sub);white-space:nowrap;}
+  .src-item-links{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+  .src-item-links a{
+    font-size:11px;font-weight:700;color:var(--accent1);
+    text-decoration:none;background:#eef0fb;padding:4px 10px;border-radius:8px;
+  }
+  .src-item-stats{
+    display:flex;flex-wrap:wrap;gap:10px;margin:6px 0;font-size:11px;color:var(--sub);
+  }
+  .src-item-stats b{color:var(--text);}
+  .src-item-memo{font-size:12px;color:var(--sub);margin-top:6px;white-space:pre-wrap;line-height:1.5;}
+  .src-item-del{
+    font-size:11px;color:var(--danger);cursor:pointer;font-weight:700;flex-shrink:0;
+  }
+  .src-empty{text-align:center;color:var(--sub);font-size:13px;padding:30px 0;}
+  textarea#srcMemo{
+    width:100%;min-height:60px;padding:12px 14px;border:1px solid var(--border);
+    border-radius:10px;background:var(--input-bg);font-size:14px;font-family:inherit;
+    resize:vertical;outline:none;
+  }
+  textarea#srcMemo:focus{border-color:var(--accent1);}
+  .src-save-btn{
+    width:100%;padding:13px;border:none;border-radius:12px;background:var(--accent1);
+    color:#fff;font-size:14px;font-weight:800;cursor:pointer;margin-top:6px;
+  }
+  .src-save-btn:hover{opacity:.9;}
+  .src-current-badge{
+    background:#eef0fb;color:var(--accent1);font-size:11px;font-weight:700;
+    padding:8px 12px;border-radius:10px;margin-bottom:12px;
+  }
   h1{
     text-align:center;
     font-size:28px;
@@ -241,6 +307,13 @@
 <body>
 <div class="wrap">
   <h1>깜오 그로스마진계산기</h1>
+
+  <div class="tabnav">
+    <button class="tabbtn on" id="tabbtn-calc" onclick="showTab('calc')">🧮 마진계산기</button>
+    <button class="tabbtn" id="tabbtn-list" onclick="showTab('list')">📋 소싱 리스트</button>
+  </div>
+
+  <div id="tab-calc" class="tabpage on">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <span id="saveIndicator" style="font-size:11px;color:var(--good);opacity:0;transition:opacity .3s;">✓ 저장됨</span>
@@ -249,7 +322,7 @@
 
     <div class="field">
       <label>판매가</label>
-      <input type="number" id="salePrice" value="8900" oninput="calc()">
+      <input type="number" id="salePrice" value="10000" oninput="calc()">
     </div>
 
     <div class="field">
@@ -276,7 +349,7 @@
         <label class="radio-opt"><input type="radio" name="costMode" value="krw" onchange="onCostModeChange()"> 원화(₩) 직접입력</label>
       </div>
       <div class="cost-input-row">
-        <input type="number" id="importCostRaw" value="9" step="0.01" oninput="calc()">
+        <input type="number" id="importCostRaw" value="5" step="0.01" oninput="calc()">
         <span class="cost-x" id="costRateWrap">× <input type="number" id="exRate" value="300" style="width:56px;padding:6px;border:1px solid var(--border);border-radius:8px;font-size:13px;text-align:center;" oninput="calc()">원 =</span>
         <span class="cost-result" id="importCostResult">0원</span>
       </div>
@@ -284,7 +357,7 @@
 
     <div class="field">
       <label>구성 수량</label>
-      <input type="number" id="qty" value="2" oninput="calc()">
+      <input type="number" id="qty" value="1" oninput="calc()">
     </div>
 
     <div class="field">
@@ -326,18 +399,46 @@
       실제 요금은 카테고리·최신 정책에 따라 달라질 수 있으니 쿠팡윙에서 최종 확인하세요.
     </div>
   </div>
+  </div>
+
+  <div id="tab-list" class="tabpage">
+  <div class="card">
+    <div class="src-current-badge" id="srcCurrentBadge">현재 계산기 결과를 저장합니다: 마진율 -%, 개당수익 -원</div>
+
+    <div class="field">
+      <label>상품명</label>
+      <input type="text" id="srcName" placeholder="예) 스텐 텀블러 500ml">
+    </div>
+    <div class="field">
+      <label>도매꾹/1688 소싱링크</label>
+      <input type="text" id="srcSourceLink" placeholder="https://...">
+    </div>
+    <div class="field">
+      <label>쿠팡 벤치마킹(경쟁상품) 링크</label>
+      <input type="text" id="srcBenchLink" placeholder="https://...">
+    </div>
+    <div class="field">
+      <label>메모</label>
+      <textarea id="srcMemo" placeholder="예) 리뷰 100개 이상, 겨울시즌 상품, 번들로 3개 구성 고려"></textarea>
+    </div>
+    <button class="src-save-btn" onclick="saveSourcingItem()">+ 현재 계산기 결과와 함께 저장</button>
+
+    <hr class="divider">
+
+    <div id="srcList"></div>
+  </div>
+  </div>
 </div>
 
 <script>
 let manualShip = false;
 
-// 로켓그로스 사이즈 유형표 (세변의 합 cm / 무게 kg) + 직관적 예시
 const sizeTable = [
   {name:'극소형', maxSum:80,  maxWt:2,  example:'손수건, 안경, 헤어밴드', range:'세변합 ~80cm · ~2kg'},
   {name:'소형',   maxSum:100, maxWt:5,  example:'수건세트, 슬리퍼, 가방', range:'세변합 ~100cm · ~5kg'},
   {name:'중형',   maxSum:120, maxWt:10, example:'담요, 베개, 정리함', range:'세변합 ~120cm · ~10kg'},
 ];
-let selectedSizeIdx = 1;
+let selectedSizeIdx = 0;
 
 function renderSizeGrid(){
   const grid = document.getElementById('sizeGrid');
@@ -356,8 +457,6 @@ function selectSize(i){
   calc();
 }
 
-// 입출고/배송비 프로모션 할인가표 (판매가 구간 x 사이즈유형)
-// 열 순서: 극소형, 소형, 중형, 대형1, 대형2, 특대형
 const feeTable = [
   {max:5000,      fees:[2050,3250,4050,4350,6325,7825]},
   {max:10000,     fees:[2150,3275,4050,4500,6600,8100]},
@@ -461,16 +560,16 @@ function toggleFormula(){
 }
 
 function resetAll(){
-  document.getElementById('salePrice').value=8900;
+  document.getElementById('salePrice').value=10000;
   document.getElementById('feeRate').value=11;
-  document.getElementById('importCostRaw').value=9;
+  document.getElementById('importCostRaw').value=5;
   document.getElementById('exRate').value=300;
   document.querySelector('input[name="costMode"][value="cny"]').checked = true;
   document.getElementById('costRateWrap').style.display='flex';
-  document.getElementById('qty').value=2;
+  document.getElementById('qty').value=1;
   document.getElementById('monthQty').value=100;
   document.getElementById('adRate').value=20;
-  selectedSizeIdx=1;
+  selectedSizeIdx=0;
   manualShip=false;
   renderSizeGrid();
   calc();
@@ -544,11 +643,113 @@ async function loadState(){
   }
 }
 
+function showTab(id){
+  document.querySelectorAll('.tabpage').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  document.getElementById('tabbtn-'+id).classList.add('on');
+  if(id==='list'){ updateCurrentBadge(); renderSourcingList(); }
+}
+
+function updateCurrentBadge(){
+  const marginRate = document.getElementById('outMarginRate').textContent;
+  const unitProfit = document.getElementById('outUnitProfit').textContent;
+  document.getElementById('srcCurrentBadge').textContent =
+    `현재 계산기 결과를 저장합니다: 마진율 ${marginRate}, 개당수익 ${unitProfit}`;
+}
+
+const SRC_LIST_KEY = 'kkamo_sourcing_list_v1';
+let sourcingList = [];
+
+function escapeHtmlSrc(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadSourcingList(){
+  try{
+    if(!window.storage){ sourcingList=[]; return; }
+    const result = await window.storage.get(SRC_LIST_KEY, false);
+    sourcingList = (result && result.value) ? JSON.parse(result.value) : [];
+  }catch(e){ sourcingList = []; }
+}
+
+async function persistSourcingList(){
+  try{
+    if(!window.storage) return;
+    await window.storage.set(SRC_LIST_KEY, JSON.stringify(sourcingList), false);
+    showSaveIndicator();
+  }catch(e){ console.error('소싱리스트 저장 실패:', e); }
+}
+
+function saveSourcingItem(){
+  const name = document.getElementById('srcName').value.trim();
+  if(!name){ alert('상품명을 입력해주세요.'); return; }
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+
+  const entry = {
+    id: 'src_'+now.getTime(),
+    dateStr: dateStr,
+    name: name,
+    sourceLink: document.getElementById('srcSourceLink').value.trim(),
+    benchLink: document.getElementById('srcBenchLink').value.trim(),
+    memo: document.getElementById('srcMemo').value.trim(),
+    salePrice: document.getElementById('salePrice').value,
+    marginRate: document.getElementById('outMarginRate').textContent,
+    unitProfit: document.getElementById('outUnitProfit').textContent,
+    monthMargin: document.getElementById('outMonthMargin').textContent,
+    sizeName: sizeTable[selectedSizeIdx].name
+  };
+  sourcingList.unshift(entry);
+  persistSourcingList();
+
+  document.getElementById('srcName').value='';
+  document.getElementById('srcSourceLink').value='';
+  document.getElementById('srcBenchLink').value='';
+  document.getElementById('srcMemo').value='';
+
+  renderSourcingList();
+}
+
+function deleteSourcingItem(id){
+  sourcingList = sourcingList.filter(s=>s.id!==id);
+  persistSourcingList();
+  renderSourcingList();
+}
+
+function renderSourcingList(){
+  const list = document.getElementById('srcList');
+  if(!sourcingList.length){
+    list.innerHTML = '<div class="src-empty">저장된 상품이 없습니다.<br>상품명 입력 후 저장해보세요.</div>';
+    return;
+  }
+  list.innerHTML = sourcingList.map(s=>`
+    <div class="src-item">
+      <div class="src-item-top">
+        <span class="src-item-name">${escapeHtmlSrc(s.name)}</span>
+        <span class="src-item-del" onclick="deleteSourcingItem('${s.id}')">삭제</span>
+      </div>
+      <div class="src-item-date">${s.dateStr} · ${escapeHtmlSrc(s.sizeName||'')} · 판매가 ${Number(s.salePrice||0).toLocaleString('ko-KR')}원</div>
+      <div class="src-item-links">
+        ${s.sourceLink ? `<a href="${escapeHtmlSrc(s.sourceLink)}" target="_blank">🔗 소싱링크</a>` : ''}
+        ${s.benchLink ? `<a href="${escapeHtmlSrc(s.benchLink)}" target="_blank">🛒 쿠팡 벤치마킹</a>` : ''}
+      </div>
+      <div class="src-item-stats">
+        <span>마진율 <b>${escapeHtmlSrc(s.marginRate)}</b></span>
+        <span>개당수익 <b>${escapeHtmlSrc(s.unitProfit)}</b></span>
+        <span>월예상마진 <b>${escapeHtmlSrc(s.monthMargin)}</b></span>
+      </div>
+      ${s.memo ? `<div class="src-item-memo">${escapeHtmlSrc(s.memo)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
 async function init(){
   renderSizeGrid();
   const loaded = await loadState();
   calc();
   if(!loaded) saveState();
+  await loadSourcingList();
 }
 
 init();
